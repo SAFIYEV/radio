@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const playerContainer = document.querySelector('.player-container');
     const profileSection = document.getElementById('profile-section');
     const themeButtons = document.querySelectorAll('.theme-btn');
-    const currentSongElement = document.querySelector('.current-song');
+    const currentSongElement = document.getElementById('current-song');
     
     // Инициализация визуализатора
     for (let i = 0; i < 60; i++) {
@@ -52,22 +52,25 @@ document.addEventListener('DOMContentLoaded', function() {
             webApp.expand();
             webApp.enableClosingConfirmation();
             
-            // Изменение цвета кнопок под тему Telegram
+            // Установка цветов в соответствии с темой Telegram
             webApp.setHeaderColor(webApp.themeParams.bg_color || "#17212b");
             webApp.setBackgroundColor(webApp.themeParams.bg_color || "#17212b");
             
-            // Обработка данных пользователя
-            const user = webApp.initDataUnsafe.user;
-            if (user) {
-                initUserProfile(user);
+            // Применение темы Telegram
+            if (webApp.colorScheme === 'light') {
+                document.body.classList.add('light-theme');
+                document.body.classList.remove('night-theme', 'rain-theme');
+            } else {
+                document.body.classList.add('night-theme');
+                document.body.classList.remove('light-theme', 'rain-theme');
             }
             
-            // Обработка событий платформы
-            webApp.onEvent('themeChanged', () => {
-                document.body.classList.toggle('light-theme', webApp.colorScheme === 'light');
-            });
-            
-            return true;
+            // Обработка данных пользователя
+            const user = webApp.initDataUnsafe?.user;
+            if (user) {
+                initUserProfile(user);
+                return true;
+            }
         }
         return false;
     }
@@ -76,8 +79,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function initUserProfile(user) {
         const profileHTML = `
             <div class="profile-header">
-                <div class="profile-avatar" id="profile-avatar" 
-                     style="${user.photo_url ? `background-image: url(${user.photo_url})` : ''}">
+                <div class="profile-avatar" 
+                     style="${user.photo_url ? `background-image: url(${user.photo_url})` : 'background: linear-gradient(135deg, #00c6ff, #0072ff)'}">
                     ${user.photo_url ? '' : (user.first_name?.[0] || '') + (user.last_name?.[0] || '')}
                 </div>
                 <div class="profile-info">
@@ -108,12 +111,8 @@ document.addEventListener('DOMContentLoaded', function() {
     playBtn.addEventListener('click', function() {
         if (audioPlayer.paused) {
             audioPlayer.play();
-            playIcon.textContent = '⏸';
-            setStatus(status.CONNECTED);
         } else {
             audioPlayer.pause();
-            playIcon.textContent = '▶';
-            setStatus(status.PAUSED);
         }
     });
     
@@ -126,7 +125,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let audioContext;
     let analyser;
     let dataArray;
-    
+    let animationFrameId;
+
     function initAudioAnalyser() {
         if (!audioContext) {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -140,10 +140,12 @@ document.addEventListener('DOMContentLoaded', function() {
             dataArray = new Uint8Array(bufferLength);
         }
         
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
+        
         function animate() {
-            if (!audioPlayer.paused) {
-                requestAnimationFrame(animate);
-            }
+            animationFrameId = requestAnimationFrame(animate);
             
             analyser.getByteFrequencyData(dataArray);
             
@@ -152,7 +154,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const height = Math.max(5, value * 0.7);
                 bars[i].style.height = `${height}px`;
                 
-                // Динамический цвет
                 const hue = 200 + value * 0.4;
                 bars[i].style.background = `linear-gradient(to top, 
                     hsla(${hue}, 100%, 50%, 0.8), 
@@ -165,16 +166,23 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Инициализация анализатора
     audioPlayer.addEventListener('play', function() {
+        playIcon.textContent = '⏸';
         setStatus(status.CONNECTED);
-        if (!audioContext) {
-            initAudioAnalyser();
+        initAudioAnalyser();
+    });
+    
+    audioPlayer.addEventListener('pause', function() {
+        playIcon.textContent = '▶';
+        setStatus(status.PAUSED);
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
         }
     });
     
     // Обработчики статусов
     audioPlayer.addEventListener('waiting', () => setStatus(status.BUFFERING));
     audioPlayer.addEventListener('playing', () => setStatus(status.CONNECTED));
-    audioPlayer.addEventListener('pause', () => setStatus(status.PAUSED));
     audioPlayer.addEventListener('error', () => setStatus(status.ERROR));
     
     // Автовоспроизведение
@@ -225,7 +233,6 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.className = theme + '-theme';
             localStorage.setItem('selectedTheme', theme);
             
-            // Обновление активной кнопки
             themeButtons.forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
         });
@@ -286,9 +293,14 @@ document.addEventListener('DOMContentLoaded', function() {
     updateTrackInfo();
     
     // Обработка изменения ориентации
-    window.addEventListener('orientationchange', function() {
-        if (audioContext) {
-            initAudioAnalyser();
-        }
-    });
+    function handleOrientationChange() {
+        setTimeout(() => {
+            if (audioContext) {
+                initAudioAnalyser();
+            }
+        }, 300);
+    }
+    
+    window.addEventListener('resize', handleOrientationChange);
+    window.addEventListener('orientationchange', handleOrientationChange);
 });
