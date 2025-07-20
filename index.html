@@ -1,87 +1,199 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Choyxona FM - Лучшее радио Узбекистана</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Choyxona Radio</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      height: 100vh;
+      overflow: hidden;
+      transition: background-image 0.5s ease;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .tabs {
+      display: flex;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .tab.active {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+    }
+    .content {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #radio-tab {
+      text-align: center;
+    }
+    #profile-tab {
+      display: none;
+      text-align: center;
+    }
+    .controls {
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .volume {
+      margin: 20px 0;
+    }
+    .animation {
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, #fff 10%, transparent 10%);
+      background-size: 10px 10px;
+      animation: wave 1s infinite linear;
+      display: none;
+    }
+    @keyframes wave {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    .theme-selector {
+      margin-top: 20px;
+    }
+    .theme-selector button {
+      width: 50px;
+      height: 50px;
+      background-size: cover;
+      margin: 0 10px;
+    }
+    #light-theme { background-image: url('https://i.ibb.co/QjYdcjcr/light.png'); }
+    #night-theme { background-image: url('https://i.ibb.co/jk7GMccj/night.png'); }
+    #rain-theme { background-image: url('https://i.ibb.co/xSsFF9fS/rain.png'); }
+    #user-photo {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
-<body class="night-theme">
-    <div class="container">
-        <header>
-            <div class="theme-switcher">
-                <button class="theme-btn" data-theme="light" title="Светлая тема">
-                    <div class="theme-icon">☀️</div>
-                    <span class="theme-label">Свет</span>
-                </button>
-                <button class="theme-btn" data-theme="night" title="Ночная тема">
-                    <div class="theme-icon">🌙</div>
-                    <span class="theme-label">Ночь</span>
-                </button>
-                <button class="theme-btn" data-theme="rain" title="Дождливая тема">
-                    <div class="theme-icon">🌧️</div>
-                    <span class="theme-label">Дождь</span>
-                </button>
-            </div>
-            <h1>Choyxona FM</h1>
-            <div class="subtitle">Лучшие узбекские и восточные хиты 24/7</div>
-        </header>
-        
-        <div class="player-container">
-            <div class="visualizer-container">
-                <div class="logo">🎵</div>
-                <div class="visualizer" id="visualizer"></div>
-            </div>
-            
-            <div class="controls">
-                <div class="main-controls">
-                    <button class="btn control-btn" id="prev-btn" title="Предыдущая">
-                        <span class="btn-icon">⏮</span>
-                    </button>
-                    <button class="btn play-btn" id="play-btn" title="Воспроизвести/Пауза">
-                        <span class="btn-icon" id="play-icon">▶</span>
-                    </button>
-                    <button class="btn control-btn" id="next-btn" title="Следующая">
-                        <span class="btn-icon">⏭</span>
-                    </button>
-                </div>
-                
-                <div class="volume-control">
-                    <div class="volume-icon">🔊</div>
-                    <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.7">
-                </div>
-                
-                <div class="station-info">
-                    <div class="current-song" id="current-song">Загрузка...</div>
-                    <div class="bitrate">128 kbps</div>
-                </div>
-            </div>
-            
-            <div class="connection-status">
-                <div class="status-indicator" id="status-indicator"></div>
-                <span id="status-text">Подключение...</span>
-            </div>
-        </div>
-        
-        <div class="profile-section" id="profile-section">
-            <!-- Профиль будет заполнен через Telegram WebApp -->
-        </div>
+<body>
+  <div class="container">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('radio')">Radio</div>
+      <div class="tab" onclick="switchTab('profile')">Profile</div>
     </div>
-    
-    <nav class="bottom-nav">
-        <button id="radio-btn" class="nav-btn active">
-            <span class="nav-icon">📻</span>
-            <span class="nav-text">Радио</span>
-        </button>
-        <button id="profile-btn" class="nav-btn">
-            <span class="nav-icon">👤</span>
-            <span class="nav-text">Профиль</span>
-        </button>
-    </nav>
-    
-    <audio id="audio-player" crossorigin="anonymous"></audio>
-    
-    <script src="script.js"></script>
+    <div class="content" id="radio-tab">
+      <h1>Choyxona Radio</h1>
+      <div class="animation" id="radio-animation"></div>
+      <div class="controls">
+        <button onclick="togglePlay()">Play/Pause</button>
+        <div class="volume">
+          <label>Volume: </label>
+          <input type="range" id="volume" min="0" max="100" value="50">
+        </div>
+      </div>
+    </div>
+    <div class="content" id="profile-tab">
+      <img id="user-photo" src="" alt="User Photo">
+      <h2 id="user-name"></h2>
+      <p id="listen-time">Listened: 0 minutes</p>
+      <div class="theme-selector">
+        <h3>Choose Theme</h3>
+        <button id="light-theme" onclick="setTheme('light')"></button>
+        <button id="night-theme" onclick="setTheme('night')"></button>
+        <button id="rain-theme" onclick="setTheme('rain')"></button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // Fullscreen mode
+
+    const audio = new Audio('https://region-ru1.tunio.ai/radio-choyxona.aac');
+    const volumeControl = document.getElementById('volume');
+    const animation = document.getElementById('radio-animation');
+    let isPlaying = false;
+    let listenTime = 0;
+    let timer;
+
+    // Initialize user data
+    const user = tg.initDataUnsafe.user || {};
+    document.getElementById('user-name').textContent = user.first_name ? `${user.first_name} ${user.last_name || ''}` : 'Guest';
+    document.getElementById('user-photo').src = user.photo_url || 'https://via.placeholder.com/100';
+
+    // Themes
+    const themes = {
+      light: 'https://i.ibb.co/QjYdcjcr/light.png',
+      night: 'https://i.ibb.co/jk7GMccj/night.png',
+      rain: 'https://i.ibb.co/xSsFF9fS/rain.png'
+    };
+
+    function setTheme(theme) {
+      document.body.style.backgroundImage = `url(${themes[theme]})`;
+      localStorage.setItem('theme', theme);
+    }
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+
+    function togglePlay() {
+      if (isPlaying) {
+        audio.pause();
+        animation.style.display = 'none';
+        clearInterval(timer);
+      } else {
+        audio.play();
+        animation.style.display = 'block';
+        timer = setInterval(() => {
+          listenTime += 1 / 60;
+          document.getElementById('listen-time').textContent = `Listened: ${Math.floor(listenTime)} minutes`;
+        }, 1000);
+      }
+      isPlaying = !isPlaying;
+    }
+
+    volumeControl.addEventListener('input', () => {
+      audio.volume = volumeControl.value / 100;
+    });
+
+   (audio.volume = volumeControl.value / 100)
+
+    function switchTab(tab) {
+      document.getElementById('radio-tab').style.display = tab === 'radio' ? 'flex' : 'none';
+      document.getElementById('profile-tab').style.display = tab === 'profile' ? 'flex' : 'none';
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+    }
+
+    // Telegram Main Button
+    tg.MainButton.setText('Close').show().onClick(() => tg.close());
+  </script>
 </body>
 </html>
