@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Choyxona Radio</title>
-    <script src="https://telegram.org/js/telegram-web-app.js?57"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.6/babel.min.js"></script>
@@ -139,14 +139,6 @@
         background: url('https://i.ibb.co/xSsFF9fS/rain.png') center/cover;
       }
 
-      .user-photo {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        margin-bottom: 10px;
-        object-fit: cover;
-      }
-
       body {
         margin: 0;
         font-family: Arial, sans-serif;
@@ -170,16 +162,16 @@
   <body>
     <div id="root"></div>
     <script type="text/babel">
+      // Note: For production, precompile scripts using Babel instead of in-browser transformer
+      // See: https://babeljs.io/docs/setup/
+      const { createRoot } = ReactDOM;
+
       function App() {
         const [activeTab, setActiveTab] = React.useState('radio');
         const [isPlaying, setIsPlaying] = React.useState(false);
         const [volume, setVolume] = React.useState(50);
         const [listenTime, setListenTime] = React.useState(0);
         const [theme, setTheme] = React.useState('light');
-        const [userData, setUserData] = React.useState({
-          name: 'Guest',
-          photoUrl: 'https://via.placeholder.com/100'
-        });
 
         const audioRef = React.useRef(null);
         const timerRef = React.useRef(null);
@@ -189,17 +181,9 @@
           
           if (tg) {
             tg.ready();
-            tg.expand();
-            tg.enableClosingConfirmation();
-            
+            tg.expand(); // Ensures fullscreen mode
             tg.MainButton.setText('Close').show();
             tg.MainButton.onClick(() => tg.close());
-
-            const user = tg.initDataUnsafe?.user || {};
-            setUserData({
-              name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Guest',
-              photoUrl: user.photo_url || 'https://via.placeholder.com/100'
-            });
           }
 
           audioRef.current = new Audio('https://region-ru1.tunio.ai/radio-choyxona.aac');
@@ -266,7 +250,7 @@
         };
 
         const openTelegramChannel = (url) => {
-          window.open(url, '_blank');
+          window.Telegram.WebApp.openTelegramLink(url);
         };
 
         return (
@@ -321,12 +305,7 @@
 
             {activeTab === 'profile' && (
               <div className="content">
-                <img 
-                  src={userData.photoUrl} 
-                  alt="User" 
-                  className="user-photo"
-                />
-                <h2>{userData.name}</h2>
+                <h2>Profile</h2>
                 <p>Listened: {Math.floor(listenTime)} minutes</p>
                 <div className="telegram-buttons">
                   <button onClick={() => openTelegramChannel('https://t.me/startupchoyxona')}>
@@ -357,7 +336,8 @@
         );
       }
 
-      ReactDOM.render(<App />, document.getElementById('root'));
+      const root = createRoot(document.getElementById('root'));
+      root.render(<App />);
     </script>
   </body>
 </html>
