@@ -67,6 +67,11 @@
         background: #0056b3;
       }
 
+      button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+      }
+
       .volume {
         margin: 20px 0;
       }
@@ -189,6 +194,7 @@
         const [listenTime, setListenTime] = React.useState(0);
         const [theme, setTheme] = React.useState('light');
         const [language, setLanguage] = React.useState('en');
+        const [error, setError] = React.useState(null);
 
         const translations = {
           ru: {
@@ -203,7 +209,8 @@
             startupChoyxona: 'Стартап Чойхона',
             tonCommunity: 'TON Сообщество CA',
             chooseTheme: 'Выберите тему',
-            chooseLanguage: 'Выберите язык'
+            chooseLanguage: 'Выберите язык',
+            error: 'Ошибка воспроизведения аудио'
           },
           en: {
             radio: 'Radio',
@@ -217,7 +224,8 @@
             startupChoyxona: 'Startup Choyxona',
             tonCommunity: 'TON Community CA',
             chooseTheme: 'Choose Theme',
-            chooseLanguage: 'Choose Language'
+            chooseLanguage: 'Choose Language',
+            error: 'Audio playback error'
           },
           lez: {
             radio: 'Радио',
@@ -231,7 +239,8 @@
             startupChoyxona: 'Стартап Чойхона',
             tonCommunity: 'TON Жамаат CA',
             chooseTheme: 'тема выбирата',
-            chooseLanguage: 'ЧIал хкяй'
+            chooseLanguage: 'ЧIал хкяй',
+            error: 'аудио кугунин гъалатI'
           },
           uz: {
             radio: 'Radio',
@@ -245,7 +254,8 @@
             startupChoyxona: 'Startup Choyxona',
             tonCommunity: 'TON Jamiyat CA',
             chooseTheme: 'Mavzuni tanlang',
-            chooseLanguage: 'Tilni tanlang'
+            chooseLanguage: 'Tilni tanlang',
+            error: 'Audio o\'ynashda xatolik'
           }
         };
 
@@ -258,12 +268,18 @@
           if (tg) {
             tg.ready();
             tg.expand();
-            //tg.MainButton.setText('Close').show();
-            //tg.MainButton.onClick(() => tg.close());
           }
 
-          audioRef.current = new Audio('https://region-ru1.tunio.ai/radio-choyxona.aac');
-          audioRef.current.volume = volume / 100;
+          try {
+            audioRef.current = new Audio('https://region-ru1.tunio.ai/radio-choyxona.aac');
+            audioRef.current.volume = volume / 100;
+            audioRef.current.addEventListener('error', (e) => {
+              setError('Audio playback error');
+              setIsPlaying(false);
+            });
+          } catch (err) {
+            setError('Failed to initialize audio');
+          }
 
           const savedTheme = localStorage.getItem('theme');
           const savedListenTime = localStorage.getItem('listenTime');
@@ -313,13 +329,29 @@
           if (isPlaying) {
             audioRef.current.pause();
             clearInterval(timerRef.current);
-          } else {
-            audioRef.current.play();
-            timerRef.current = setInterval(() => {
-              setListenTime(prev => prev + 1/60);
-            }, 1000);
+            setIsPlaying(false);
+          } else if (volume > 0) {
+            try {
+              const playPromise = audioRef.current.play();
+              if (playPromise !== undefined) {
+                playPromise
+                  .then(() => {
+                    timerRef.current = setInterval(() => {
+                      setListenTime(prev => prev + 1/60);
+                    }, 1000);
+                    setIsPlaying(true);
+                    setError(null);
+                  })
+                  .catch((err) => {
+                    setError('Audio playback error');
+                    setIsPlaying(false);
+                  });
+              }
+            } catch (err) {
+              setError('Audio playback error');
+              setIsPlaying(false);
+            }
           }
-          setIsPlaying(!isPlaying);
         };
 
         const handleVolumeChange = (e) => {
@@ -349,6 +381,7 @@
               {activeTab === 'radio' && (
                 <div className="content">
                   <h1>{t.choyxonaRadio}</h1>
+                  {error && <p style={{ color: 'red' }}>{t.error}</p>}
                   <div className={`player-container ${isPlaying ? 'playing' : ''}`}>
                     <div className="player-visualizer">
                       <div className="bar"></div>
@@ -362,7 +395,7 @@
                     </div>
                   </div>
                   <div className="controls">
-                    <button onClick={togglePlay}>
+                    <button onClick={togglePlay} disabled={volume == 0}>
                       {isPlaying ? t.pause : t.play}
                     </button>
                     <div className="volume">
