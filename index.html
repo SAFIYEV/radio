@@ -20,6 +20,9 @@
         display: flex;
         background: rgba(0, 0, 0, 0.5);
         padding: 10px;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
         z-index: 10;
       }
 
@@ -114,7 +117,7 @@
         margin-top: 15px;
       }
 
-      .theme-selector {
+      .theme-selector, .language-selector {
         margin-top: 20px;
       }
 
@@ -137,6 +140,19 @@
 
       .rain {
         background: url('https://i.ibb.co/xSsFF9fS/rain.png') center/cover;
+      }
+
+      select {
+        padding: 10px;
+        border-radius: 5px;
+        background: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+
+      select:hover {
+        background: #0056b3;
       }
 
       body {
@@ -172,6 +188,66 @@
         const [volume, setVolume] = React.useState(50);
         const [listenTime, setListenTime] = React.useState(0);
         const [theme, setTheme] = React.useState('light');
+        const [language, setLanguage] = React.useState('en');
+
+        const translations = {
+          ru: {
+            radio: 'Радио',
+            profile: 'Профиль',
+            choyxonaRadio: 'Чойхона Радио',
+            nowPlaying: 'Сейчас играет: Чойхона Радио',
+            pause: 'Пауза',
+            play: 'Играть',
+            volume: 'Громкость',
+            listened: 'Прослушано',
+            startupChoyxona: 'Стартап Чойхона',
+            tonCommunity: 'TON Сообщество CA',
+            chooseTheme: 'Выберите тему',
+            chooseLanguage: 'Выберите язык'
+          },
+          en: {
+            radio: 'Radio',
+            profile: 'Profile',
+            choyxonaRadio: 'Choyxona Radio',
+            nowPlaying: 'Now Playing: Choyxona Radio',
+            pause: 'Pause',
+            play: 'Play',
+            volume: 'Volume',
+            listened: 'Listened',
+            startupChoyxona: 'Startup Choyxona',
+            tonCommunity: 'TON Community CA',
+            chooseTheme: 'Choose Theme',
+            chooseLanguage: 'Choose Language'
+          },
+          lez: {
+            radio: 'Радио',
+            profile: 'Профиль',
+            choyxonaRadio: 'Чойхона Радио',
+            nowPlaying: 'хизете кугоза чойхона радио',
+            pause: 'козара',
+            play: 'яб ча',
+            volume: 'ван',
+            listened: 'яб гана',
+            startupChoyxona: 'Стартап Чойхона',
+            tonCommunity: 'TON Жамаат CA',
+            chooseTheme: 'тема выбирата',
+            chooseLanguage: 'ЧIал хкяй'
+          },
+          uz: {
+            radio: 'Radio',
+            profile: 'Profil',
+            choyxonaRadio: 'Choyxona Radio',
+            nowPlaying: 'Hozir o\'ynayapti: Choyxona Radio',
+            pause: 'Pauza',
+            play: 'O\'ynash',
+            volume: 'Ovoz balandligi',
+            listened: 'Tinglangan',
+            startupChoyxona: 'Startup Choyxona',
+            tonCommunity: 'TON Jamiyat CA',
+            chooseTheme: 'Mavzuni tanlang',
+            chooseLanguage: 'Tilni tanlang'
+          }
+        };
 
         const audioRef = React.useRef(null);
         const timerRef = React.useRef(null);
@@ -181,7 +257,7 @@
           
           if (tg) {
             tg.ready();
-            tg.expand(); // Ensures fullscreen mode
+            tg.expand();
             tg.MainButton.setText('Close').show();
             tg.MainButton.onClick(() => tg.close());
           }
@@ -191,9 +267,11 @@
 
           const savedTheme = localStorage.getItem('theme');
           const savedListenTime = localStorage.getItem('listenTime');
+          const savedLanguage = localStorage.getItem('language');
           
           if (savedTheme) setTheme(savedTheme);
           if (savedListenTime) setListenTime(parseFloat(savedListenTime));
+          if (savedLanguage) setLanguage(savedLanguage);
 
           return () => {
             if (audioRef.current) {
@@ -228,7 +306,8 @@
 
         React.useEffect(() => {
           localStorage.setItem('listenTime', listenTime.toString());
-        }, [listenTime]);
+          localStorage.setItem('language', language);
+        }, [listenTime, language]);
 
         const togglePlay = () => {
           if (isPlaying) {
@@ -249,89 +328,105 @@
           audioRef.current.volume = newVolume / 100;
         };
 
+        const handleLanguageChange = (e) => {
+          setLanguage(e.target.value);
+        };
+
         const openTelegramChannel = (url) => {
           window.Telegram.WebApp.openTelegramLink(url);
         };
 
+        const t = translations[language];
+
         return (
           <div className="container">
+            <div className="content">
+              {activeTab === 'radio' && (
+                <div className="content">
+                  <h1>{t.choyxonaRadio}</h1>
+                  <div className={`player-container ${isPlaying ? 'playing' : ''}`}>
+                    <div className="player-visualizer">
+                      <div className="bar"></div>
+                      <div className="bar"></div>
+                      <div className="bar"></div>
+                      <div className="bar"></div>
+                      <div className="bar"></div>
+                    </div>
+                    <div className="player-info">
+                      <p>{t.nowPlaying}</p>
+                    </div>
+                  </div>
+                  <div className="controls">
+                    <button onClick={togglePlay}>
+                      {isPlaying ? t.pause : t.play}
+                    </button>
+                    <div className="volume">
+                      <label>{t.volume}: </label>
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="100" 
+                        value={volume} 
+                        onChange={handleVolumeChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'profile' && (
+                <div className="content">
+                  <h2>{t.profile}</h2>
+                  <p>{t.listened}: {Math.floor(listenTime)} minutes</p>
+                  <div className="telegram-buttons">
+                    <button onClick={() => openTelegramChannel('https://t.me/startupchoyxona')}>
+                      {t.startupChoyxona}
+                    </button>
+                    <button onClick={() => openTelegramChannel('https://t.me/tonsocietycahub')}>
+                      {t.tonCommunity}
+                    </button>
+                  </div>
+                  <div className="theme-selector">
+                    <h3>{t.chooseTheme}</h3>
+                    <button 
+                      className="theme-btn light"
+                      onClick={() => setTheme('light')}
+                    ></button>
+                    <button 
+                      className="theme-btn night"
+                      onClick={() => setTheme('night')}
+                    ></button>
+                    <button 
+                      className="theme-btn rain"
+                      onClick={() => setTheme('rain')}
+                    ></button>
+                  </div>
+                  <div className="language-selector">
+                    <h3>{t.chooseLanguage}</h3>
+                    <select value={language} onChange={handleLanguageChange}>
+                      <option value="en">English</option>
+                      <option value="ru">Русский</option>
+                      <option value="lez">Лезгинский</option>
+                      <option value="uz">O‘zbek</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="tabs">
               <div 
                 className={`tab ${activeTab === 'radio' ? 'active' : ''}`} 
                 onClick={() => setActiveTab('radio')}
               >
-                Radio
+                {t.radio}
               </div>
               <div 
                 className={`tab ${activeTab === 'profile' ? 'active' : ''}`} 
                 onClick={() => setActiveTab('profile')}
               >
-                Profile
+                {t.profile}
               </div>
             </div>
-
-            {activeTab === 'radio' && (
-              <div className="content">
-                <h1>Choyxona Radio</h1>
-                <div className={`player-container ${isPlaying ? 'playing' : ''}`}>
-                  <div className="player-visualizer">
-                    <div className="bar"></div>
-                    <div className="bar"></div>
-                    <div className="bar"></div>
-                    <div className="bar"></div>
-                    <div className="bar"></div>
-                  </div>
-                  <div className="player-info">
-                    <p>Now Playing: Choyxona Radio</p>
-                  </div>
-                </div>
-                <div className="controls">
-                  <button onClick={togglePlay}>
-                    {isPlaying ? 'Pause' : 'Play'}
-                  </button>
-                  <div className="volume">
-                    <label>Volume: </label>
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="100" 
-                      value={volume} 
-                      onChange={handleVolumeChange}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'profile' && (
-              <div className="content">
-                <h2>Profile</h2>
-                <p>Listened: {Math.floor(listenTime)} minutes</p>
-                <div className="telegram-buttons">
-                  <button onClick={() => openTelegramChannel('https://t.me/startupchoyxona')}>
-                    Startup Choyxona
-                  </button>
-                  <button onClick={() => openTelegramChannel('https://t.me/tonsocietycahub')}>
-                    TON Community CA
-                  </button>
-                </div>
-                <div className="theme-selector">
-                  <h3>Choose Theme</h3>
-                  <button 
-                    className="theme-btn light"
-                    onClick={() => setTheme('light')}
-                  ></button>
-                  <button 
-                    className="theme-btn night"
-                    onClick={() => setTheme('night')}
-                  ></button>
-                  <button 
-                    className="theme-btn rain"
-                    onClick={() => setTheme('rain')}
-                  ></button>
-                </div>
-              </div>
-            )}
           </div>
         );
       }
