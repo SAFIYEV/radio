@@ -326,6 +326,11 @@
           const newVolume = e.target.value;
           setVolume(newVolume);
           audioRef.current.volume = newVolume / 100;
+          if (newVolume == 0 && isPlaying) {
+            audioRef.current.pause();
+            clearInterval(timerRef.current);
+            setIsPlaying(false);
+          }
         };
 
         const handleLanguageChange = (e) => {
