@@ -1,199 +1,363 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Choyxona Radio</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      color: #fff;
-      height: 100vh;
-      overflow: hidden;
-      transition: background-image 0.5s ease;
-    }
-    .container {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    .tabs {
-      display: flex;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 10px;
-    }
-    .tab {
-      flex: 1;
-      text-align: center;
-      padding: 10px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .tab.active {
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 5px;
-    }
-    .content {
-      flex: 1;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    #radio-tab {
-      text-align: center;
-    }
-    #profile-tab {
-      display: none;
-      text-align: center;
-    }
-    .controls {
-      margin-top: 20px;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 5px;
-      border: none;
-      border-radius: 5px;
-      background: #007bff;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    .volume {
-      margin: 20px 0;
-    }
-    .animation {
-      width: 100px;
-      height: 100px;
-      background: radial-gradient(circle, #fff 10%, transparent 10%);
-      background-size: 10px 10px;
-      animation: wave 1s infinite linear;
-      display: none;
-    }
-    @keyframes wave {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.2); }
-      100% { transform: scale(1); }
-    }
-    .theme-selector {
-      margin-top: 20px;
-    }
-    .theme-selector button {
-      width: 50px;
-      height: 50px;
-      background-size: cover;
-      margin: 0 10px;
-    }
-    #light-theme { background-image: url('https://i.ibb.co/QjYdcjcr/light.png'); }
-    #night-theme { background-image: url('https://i.ibb.co/jk7GMccj/night.png'); }
-    #rain-theme { background-image: url('https://i.ibb.co/xSsFF9fS/rain.png'); }
-    #user-photo {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      margin-bottom: 10px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="tabs">
-      <div class="tab active" onclick="switchTab('radio')">Radio</div>
-      <div class="tab" onclick="switchTab('profile')">Profile</div>
-    </div>
-    <div class="content" id="radio-tab">
-      <h1>Choyxona Radio</h1>
-      <div class="animation" id="radio-animation"></div>
-      <div class="controls">
-        <button onclick="togglePlay()">Play/Pause</button>
-        <div class="volume">
-          <label>Volume: </label>
-          <input type="range" id="volume" min="0" max="100" value="50">
-        </div>
-      </div>
-    </div>
-    <div class="content" id="profile-tab">
-      <img id="user-photo" src="" alt="User Photo">
-      <h2 id="user-name"></h2>
-      <p id="listen-time">Listened: 0 minutes</p>
-      <div class="theme-selector">
-        <h3>Choose Theme</h3>
-        <button id="light-theme" onclick="setTheme('light')"></button>
-        <button id="night-theme" onclick="setTheme('night')"></button>
-        <button id="rain-theme" onclick="setTheme('rain')"></button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand(); // Fullscreen mode
-
-    const audio = new Audio('https://region-ru1.tunio.ai/radio-choyxona.aac');
-    const volumeControl = document.getElementById('volume');
-    const animation = document.getElementById('radio-animation');
-    let isPlaying = false;
-    let listenTime = 0;
-    let timer;
-
-    // Initialize user data
-    const user = tg.initDataUnsafe.user || {};
-    document.getElementById('user-name').textContent = user.first_name ? `${user.first_name} ${user.last_name || ''}` : 'Guest';
-    document.getElementById('user-photo').src = user.photo_url || 'https://via.placeholder.com/100';
-
-    // Themes
-    const themes = {
-      light: 'https://i.ibb.co/QjYdcjcr/light.png',
-      night: 'https://i.ibb.co/jk7GMccj/night.png',
-      rain: 'https://i.ibb.co/xSsFF9fS/rain.png'
-    };
-
-    function setTheme(theme) {
-      document.body.style.backgroundImage = `url(${themes[theme]})`;
-      localStorage.setItem('theme', theme);
-    }
-
-    // Load saved theme
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    setTheme(savedTheme);
-
-    function togglePlay() {
-      if (isPlaying) {
-        audio.pause();
-        animation.style.display = 'none';
-        clearInterval(timer);
-      } else {
-        audio.play();
-        animation.style.display = 'block';
-        timer = setInterval(() => {
-          listenTime += 1 / 60;
-          document.getElementById('listen-time').textContent = `Listened: ${Math.floor(listenTime)} minutes`;
-        }, 1000);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Choyxona Radio</title>
+    <script src="https://telegram.org/js/telegram-web-app.js?57"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.6/babel.min.js"></script>
+    <style>
+      .container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        color: white;
       }
-      isPlaying = !isPlaying;
-    }
 
-    volumeControl.addEventListener('input', () => {
-      audio.volume = volumeControl.value / 100;
-    });
+      .tabs {
+        display: flex;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 10px;
+        z-index: 10;
+      }
 
-   (audio.volume = volumeControl.value / 100)
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        cursor: pointer;
+        font-size: 16px;
+      }
 
-    function switchTab(tab) {
-      document.getElementById('radio-tab').style.display = tab === 'radio' ? 'flex' : 'none';
-      document.getElementById('profile-tab').style.display = tab === 'profile' ? 'flex' : 'none';
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
-    }
+      .tab.active {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 5px;
+      }
 
-    // Telegram Main Button
-    tg.MainButton.setText('Close').show().onClick(() => tg.close());
-  </script>
-</body>
+      .content {
+        flex: 1;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .controls {
+        margin-top: 20px;
+      }
+
+      button {
+        padding: 10px 20px;
+        margin: 5px;
+        border: none;
+        border-radius: 5px;
+        background: #007bff;
+        color: white;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #0056b3;
+      }
+
+      .volume {
+        margin: 20px 0;
+      }
+
+      .volume input {
+        width: 200px;
+      }
+
+      .player-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 20px 0;
+      }
+
+      .player-container.playing .player-visualizer .bar {
+        animation: equalizer 0.5s infinite alternate;
+      }
+
+      .player-visualizer {
+        display: flex;
+        gap: 5px;
+        height: 60px;
+        align-items: flex-end;
+      }
+
+      .bar {
+        width: 10px;
+        height: 10px;
+        background: #007bff;
+        border-radius: 2px;
+      }
+
+      .bar:nth-child(1) { animation-delay: 0s; }
+      .bar:nth-child(2) { animation-delay: 0.1s; }
+      .bar:nth-child(3) { animation-delay: 0.2s; }
+      .bar:nth-child(4) { animation-delay: 0.3s; }
+      .bar:nth-child(5) { animation-delay: 0.4s; }
+
+      .player-info {
+        margin-top: 15px;
+      }
+
+      .telegram-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .theme-selector {
+        margin-top: 20px;
+      }
+
+      .theme-btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin: 0 10px;
+        border: 2px solid white;
+        cursor: pointer;
+      }
+
+      .light {
+        background: url('https://i.ibb.co/QjYdcjcr/light.png') center/cover;
+      }
+
+      .night {
+        background: url('https://i.ibb.co/jk7GMccj/night.png') center/cover;
+      }
+
+      .rain {
+        background: url('https://i.ibb.co/xSsFF9fS/rain.png') center/cover;
+      }
+
+      .user-photo {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        margin-bottom: 10px;
+        object-fit: cover;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        height: 100vh;
+        overflow: hidden;
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+      }
+
+      body.theme-transition {
+        transition: background-image 0.5s ease;
+      }
+
+      @keyframes equalizer {
+        0% { height: 10px; }
+        100% { height: 60px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+      function App() {
+        const [activeTab, setActiveTab] = React.useState('radio');
+        const [isPlaying, setIsPlaying] = React.useState(false);
+        const [volume, setVolume] = React.useState(50);
+        const [listenTime, setListenTime] = React.useState(0);
+        const [theme, setTheme] = React.useState('light');
+        const [userData, setUserData] = React.useState({
+          name: 'Guest',
+          photoUrl: 'https://via.placeholder.com/100'
+        });
+
+        const audioRef = React.useRef(null);
+        const timerRef = React.useRef(null);
+
+        React.useEffect(() => {
+          const tg = window.Telegram?.WebApp;
+          
+          if (tg) {
+            tg.ready();
+            tg.expand();
+            tg.enableClosingConfirmation();
+            
+            tg.MainButton.setText('Close').show();
+            tg.MainButton.onClick(() => tg.close());
+
+            const user = tg.initDataUnsafe?.user || {};
+            setUserData({
+              name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Guest',
+              photoUrl: user.photo_url || 'https://via.placeholder.com/100'
+            });
+          }
+
+          audioRef.current = new Audio('https://region-ru1.tunio.ai/radio-choyxona.aac');
+          audioRef.current.volume = volume / 100;
+
+          const savedTheme = localStorage.getItem('theme');
+          const savedListenTime = localStorage.getItem('listenTime');
+          
+          if (savedTheme) setTheme(savedTheme);
+          if (savedListenTime) setListenTime(parseFloat(savedListenTime));
+
+          return () => {
+            if (audioRef.current) {
+              audioRef.current.pause();
+              audioRef.current = null;
+            }
+            if (timerRef.current) clearInterval(timerRef.current);
+          };
+        }, []);
+
+        React.useEffect(() => {
+          const themes = {
+            light: 'https://i.ibb.co/QjYdcjcr/light.png',
+            night: 'https://i.ibb.co/jk7GMccj/night.png',
+            rain: 'https://i.ibb.co/xSsFF9fS/rain.png'
+          };
+          
+          document.body.classList.add('theme-transition');
+          document.body.style.backgroundImage = `url(${themes[theme]})`;
+          document.body.style.backgroundSize = 'cover';
+          document.body.style.backgroundPosition = 'center';
+          document.body.style.backgroundAttachment = 'fixed';
+          
+          localStorage.setItem('theme', theme);
+          
+          const timeout = setTimeout(() => {
+            document.body.classList.remove('theme-transition');
+          }, 500);
+
+          return () => clearTimeout(timeout);
+        }, [theme]);
+
+        React.useEffect(() => {
+          localStorage.setItem('listenTime', listenTime.toString());
+        }, [listenTime]);
+
+        const togglePlay = () => {
+          if (isPlaying) {
+            audioRef.current.pause();
+            clearInterval(timerRef.current);
+          } else {
+            audioRef.current.play();
+            timerRef.current = setInterval(() => {
+              setListenTime(prev => prev + 1/60);
+            }, 1000);
+          }
+          setIsPlaying(!isPlaying);
+        };
+
+        const handleVolumeChange = (e) => {
+          const newVolume = e.target.value;
+          setVolume(newVolume);
+          audioRef.current.volume = newVolume / 100;
+        };
+
+        const openTelegramChannel = (url) => {
+          window.open(url, '_blank');
+        };
+
+        return (
+          <div className="container">
+            <div className="tabs">
+              <div 
+                className={`tab ${activeTab === 'radio' ? 'active' : ''}`} 
+                onClick={() => setActiveTab('radio')}
+              >
+                Radio
+              </div>
+              <div 
+                className={`tab ${activeTab === 'profile' ? 'active' : ''}`} 
+                onClick={() => setActiveTab('profile')}
+              >
+                Profile
+              </div>
+            </div>
+
+            {activeTab === 'radio' && (
+              <div className="content">
+                <h1>Choyxona Radio</h1>
+                <div className={`player-container ${isPlaying ? 'playing' : ''}`}>
+                  <div className="player-visualizer">
+                    <div className="bar"></div>
+                    <div className="bar"></div>
+                    <div className="bar"></div>
+                    <div className="bar"></div>
+                    <div className="bar"></div>
+                  </div>
+                  <div className="player-info">
+                    <p>Now Playing: Choyxona Radio</p>
+                  </div>
+                </div>
+                <div className="controls">
+                  <button onClick={togglePlay}>
+                    {isPlaying ? 'Pause' : 'Play'}
+                  </button>
+                  <div className="volume">
+                    <label>Volume: </label>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      value={volume} 
+                      onChange={handleVolumeChange}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'profile' && (
+              <div className="content">
+                <img 
+                  src={userData.photoUrl} 
+                  alt="User" 
+                  className="user-photo"
+                />
+                <h2>{userData.name}</h2>
+                <p>Listened: {Math.floor(listenTime)} minutes</p>
+                <div className="telegram-buttons">
+                  <button onClick={() => openTelegramChannel('https://t.me/startupchoyxona')}>
+                    Startup Choyxona
+                  </button>
+                  <button onClick={() => openTelegramChannel('https://t.me/tonsocietycahub')}>
+                    TON Community CA
+                  </button>
+                </div>
+                <div className="theme-selector">
+                  <h3>Choose Theme</h3>
+                  <button 
+                    className="theme-btn light"
+                    onClick={() => setTheme('light')}
+                  ></button>
+                  <button 
+                    className="theme-btn night"
+                    onClick={() => setTheme('night')}
+                  ></button>
+                  <button 
+                    className="theme-btn rain"
+                    onClick={() => setTheme('rain')}
+                  ></button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+  </body>
 </html>
