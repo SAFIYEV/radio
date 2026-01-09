@@ -1,156 +1,46 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Radio</title>
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lumière Station</title>
 <style>
-* {
-  box-sizing: border-box;
-  font-family: Inter, Arial, sans-serif;
-}
+*{box-sizing:border-box;font-family:Inter,Arial,sans-serif}
+body{margin:0;background:#050507;color:#fff;overflow:hidden}
+canvas{position:fixed;inset:0;z-index:-1}
 
-body {
-  margin: 0;
-  background: #050507;
-  color: #fff;
-  overflow: hidden;
-}
+.app{min-height:100dvh;display:flex;justify-content:center;align-items:center;padding:16px}
+.card{width:100%;max-width:420px;background:rgba(20,20,25,.6);backdrop-filter:blur(14px);border-radius:24px;padding:18px;box-shadow:0 0 40px rgba(123,92,255,.25)}
 
-/* ===== Background ===== */
-canvas {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-}
+h1{text-align:center;margin:0 0 16px;font-size:22px}
 
-/* ===== Layout ===== */
-.app {
-  min-height: 100dvh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 16px;
-}
+.streams{display:flex;gap:10px;margin-bottom:14px}
+.streams button{flex:1;padding:14px;border:none;border-radius:16px;font-size:15px;background:#1b1b22;color:#fff;cursor:pointer}
+.streams button.active{background:linear-gradient(135deg,#ff4ecd,#7b5cff)}
 
-.card {
-  width: 100%;
-  max-width: 420px;
-  background: rgba(20, 20, 25, 0.65);
-  backdrop-filter: blur(14px);
-  border-radius: 24px;
-  padding: 18px;
-  box-shadow: 0 0 40px rgba(123, 92, 255, 0.25);
-}
+.controls{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.play{width:52px;height:52px;border-radius:50%;border:none;background:#7b5cff;color:#fff;font-size:20px;cursor:pointer}
 
-/* ===== UI ===== */
-h1 {
-  margin: 0 0 16px;
-  text-align: center;
-  font-size: 22px;
-}
+input[type=range]{flex:1}
 
-.streams {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 14px;
-}
+.tabs{display:flex;gap:18px;margin:10px 0}
+.tab{opacity:.6;cursor:pointer}
+.tab.active{opacity:1;font-weight:600}
 
-.streams button {
-  flex: 1;
-  padding: 14px;
-  border: none;
-  border-radius: 16px;
-  background: #1b1b22;
-  color: #fff;
-  font-size: 15px;
-  cursor: pointer;
-}
+.panel{display:none;font-size:14px}
+.panel.active{display:block}
 
-.streams button.active {
-  background: linear-gradient(135deg, #ff4ecd, #7b5cff);
-}
+.stat{margin:10px 0}
 
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.play {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: none;
-  background: #7b5cff;
-  color: #fff;
-  font-size: 20px;
-  cursor: pointer;
-}
-
-input[type="range"] {
-  flex: 1;
-}
-
-/* ===== Tabs ===== */
-.tabs {
-  display: flex;
-  gap: 18px;
-  margin: 10px 0;
-}
-
-.tab {
-  opacity: 0.6;
-  cursor: pointer;
-}
-
-.tab.active {
-  opacity: 1;
-  font-weight: 600;
-}
-
-.panel {
-  display: none;
-  font-size: 14px;
-}
-
-.panel.active {
-  display: block;
-}
-
-.stat {
-  margin-bottom: 12px;
-}
-
-/* ===== Telegram Buttons ===== */
-.tg-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.tg-buttons a {
-  flex: 1;
-  padding: 12px;
-  border-radius: 14px;
-  background: #1b1b22;
-  text-align: center;
-  text-decoration: none;
-  color: #7b5cff;
-  font-weight: 500;
-}
+.tg-buttons{display:flex;gap:10px;margin-top:12px}
+.tg-buttons a{flex:1;text-align:center;padding:12px;border-radius:14px;background:#1b1b22;color:#7b5cff;text-decoration:none;font-weight:500}
 </style>
 </head>
-
 <body>
-
 <canvas id="bg"></canvas>
-
 <div class="app">
   <div class="card">
-
-    <h1>🎧 AI Radio</h1>
+    <h1>🎧 Lumière Station</h1>
 
     <div class="streams">
       <button id="popBtn" class="active">Поп</button>
@@ -159,7 +49,7 @@ input[type="range"] {
 
     <div class="controls">
       <button id="playPause" class="play">▶</button>
-      <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7">
+      <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" />
     </div>
 
     <div class="tabs">
@@ -167,121 +57,90 @@ input[type="range"] {
       <div class="tab" data-tab="profile">Профиль</div>
     </div>
 
-    <div id="radio" class="panel active">
-      Онлайн поток воспроизводится
-    </div>
+    <div id="radio" class="panel active">Онлайн поток воспроизводится</div>
 
     <div id="profile" class="panel">
-      <div class="stat">
-        ⏱ Прослушано: <span id="minutes">0</span> минут
-      </div>
-
+      <div class="stat">⏱ Прослушано: <span id="minutes">0</span> минут</div>
       <div class="tg-buttons">
         <a href="https://t.me/mindefi" target="_blank">Министр DeFi</a>
         <a href="https://t.me/AILumiere_news" target="_blank">AI Lumière</a>
       </div>
     </div>
-
   </div>
 </div>
 
 <audio id="audio" crossorigin="anonymous"></audio>
 
 <script>
-/* ===== AUDIO ===== */
-const audio = document.getElementById('audio')
-const playPause = document.getElementById('playPause')
-const volume = document.getElementById('volume')
+const audio=document.getElementById('audio')
+const playPause=document.getElementById('playPause')
+const volume=document.getElementById('volume')
 
-const STREAM_POP_URL = './pop.m3u8'
-const STREAM_CHILL_URL = 'https://stream-156.zeno.fm/0r0xa792kwzuv'
+// m3u8 лежит рядом с html
+const STREAM_POP_URL='./playlist.m3u8'
+const STREAM_CHILL_URL='https://stream-156.zeno.fm/0r0xa792kwzuv'
 
-let bpm = 128
-audio.volume = volume.value
+let bpm=128
+audio.volume=volume.value
 
-playPause.onclick = () => {
-  if (audio.paused) {
-    audio.play()
-    playPause.textContent = '⏸'
-  } else {
-    audio.pause()
-    playPause.textContent = '▶'
-  }
+playPause.onclick=()=>{
+ if(audio.paused){audio.play();playPause.textContent='⏸'}
+ else{audio.pause();playPause.textContent='▶'}
+}
+volume.oninput=()=>audio.volume=volume.value
+
+popBtn.onclick=()=>setStream(STREAM_POP_URL,128,'popBtn')
+chillBtn.onclick=()=>setStream(STREAM_CHILL_URL,70,'chillBtn')
+
+function setStream(url,newBpm,btn){
+ bpm=newBpm
+ audio.src=url
+ audio.play()
+ playPause.textContent='⏸'
+ document.querySelectorAll('.streams button').forEach(b=>b.classList.remove('active'))
+ document.getElementById(btn).classList.add('active')
 }
 
-volume.oninput = () => audio.volume = volume.value
-
-popBtn.onclick = () => setStream(STREAM_POP_URL, 128, popBtn)
-chillBtn.onclick = () => setStream(STREAM_CHILL_URL, 70, chillBtn)
-
-function setStream(url, newBpm, btn) {
-  bpm = newBpm
-  audio.src = url
-  audio.play()
-  playPause.textContent = '⏸'
-  document.querySelectorAll('.streams button').forEach(b => b.classList.remove('active'))
-  btn.classList.add('active')
-}
-
-/* ===== TABS ===== */
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.onclick = () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'))
-    tab.classList.add('active')
-    document.getElementById(tab.dataset.tab).classList.add('active')
-  }
+// tabs
+document.querySelectorAll('.tab').forEach(t=>{
+ t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'))
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'))
+  t.classList.add('active')
+  document.getElementById(t.dataset.tab).classList.add('active')
+ }
 })
 
-/* ===== LISTEN TIME ===== */
-let minutes = Number(localStorage.getItem('minutes')) || 0
-const minutesEl = document.getElementById('minutes')
-minutesEl.textContent = minutes
+// stats
+let minutes=Number(localStorage.getItem('minutes'))||0
+const minutesEl=document.getElementById('minutes')
+minutesEl.textContent=minutes
+setInterval(()=>{
+ if(!audio.paused){minutes++;localStorage.setItem('minutes',minutes);minutesEl.textContent=minutes}
+},60000)
 
-setInterval(() => {
-  if (!audio.paused) {
-    minutes++
-    localStorage.setItem('minutes', minutes)
-    minutesEl.textContent = minutes
-  }
-}, 60000)
+// particles
+const canvas=document.getElementById('bg')
+const ctx=canvas.getContext('2d')
+function resize(){canvas.width=innerWidth;canvas.height=innerHeight}
+resize();onresize=resize
 
-/* ===== PARTICLES ===== */
-const canvas = document.getElementById('bg')
-const ctx = canvas.getContext('2d')
+const particles=Array.from({length:90},()=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*2+1,v:Math.random()+.3}))
 
-function resize() {
-  canvas.width = innerWidth
-  canvas.height = innerHeight
+function anim(){
+ ctx.clearRect(0,0,canvas.width,canvas.height)
+ const speed=bpm/110
+ particles.forEach(p=>{
+  p.y-=p.v*speed
+  if(p.y<0)p.y=canvas.height
+  ctx.beginPath()
+  ctx.arc(p.x,p.y,p.r,0,Math.PI*2)
+  ctx.fillStyle=bpm>100?'#ff4ecd':'#6fd3ff'
+  ctx.fill()
+ })
+ requestAnimationFrame(anim)
 }
-resize()
-window.onresize = resize
-
-const particles = Array.from({ length: 90 }, () => ({
-  x: Math.random() * canvas.width,
-  y: Math.random() * canvas.height,
-  r: Math.random() * 2 + 1,
-  v: Math.random() + 0.3
-}))
-
-function animate() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-  const speed = bpm / 110
-
-  particles.forEach(p => {
-    p.y -= p.v * speed
-    if (p.y < 0) p.y = canvas.height
-
-    ctx.beginPath()
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-    ctx.fillStyle = bpm > 100 ? '#ff4ecd' : '#6fd3ff'
-    ctx.fill()
-  })
-
-  requestAnimationFrame(animate)
-}
-animate()
+anim()
 </script>
-
 </body>
 </html>
