@@ -1,169 +1,286 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Radio</title>
+
 <style>
-    * { box-sizing: border-box; font-family: Inter, Arial, sans-serif; }
-    body { margin: 0; overflow: hidden; background: #0a0a0a; color: #fff; }
-    canvas { position: fixed; inset: 0; z-index: -1; }
-    .app { padding: 20px; max-width: 420px; }
-    h1 { margin: 0 0 15px; font-size: 26px; }
-    .buttons { display: flex; gap: 10px; margin-bottom: 15px; }
-    button { flex: 1; padding: 12px; border: none; border-radius: 10px; background: #1f1f1f; color: white; cursor: pointer; font-size: 14px; transition: 0.2s; }
-    button.active { background: linear-gradient(135deg, #ff4ecd, #7b5cff); }
-    button:hover { opacity: 0.85; }
-    .controls { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-    input[type="range"] { width: 100%; }
-    .tabs { display: flex; gap: 10px; margin-bottom: 10px; }
-    .tab { cursor: pointer; opacity: 0.6; }
-    .tab.active { opacity: 1; font-weight: bold; }
-    .panel { display: none; font-size: 14px; line-height: 1.6; }
-    .panel.active { display: block; }
-    a { color: #7b5cff; text-decoration: none; }
+* {
+  box-sizing: border-box;
+  font-family: Inter, Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #050507;
+  color: #fff;
+  overflow: hidden;
+}
+
+/* ===== Background ===== */
+canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+}
+
+/* ===== Layout ===== */
+.app {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(20, 20, 25, 0.65);
+  backdrop-filter: blur(14px);
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: 0 0 40px rgba(123, 92, 255, 0.25);
+}
+
+/* ===== UI ===== */
+h1 {
+  margin: 0 0 16px;
+  text-align: center;
+  font-size: 22px;
+}
+
+.streams {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.streams button {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 16px;
+  background: #1b1b22;
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.streams button.active {
+  background: linear-gradient(135deg, #ff4ecd, #7b5cff);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.play {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: #7b5cff;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+input[type="range"] {
+  flex: 1;
+}
+
+/* ===== Tabs ===== */
+.tabs {
+  display: flex;
+  gap: 18px;
+  margin: 10px 0;
+}
+
+.tab {
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.tab.active {
+  opacity: 1;
+  font-weight: 600;
+}
+
+.panel {
+  display: none;
+  font-size: 14px;
+}
+
+.panel.active {
+  display: block;
+}
+
+.stat {
+  margin-bottom: 12px;
+}
+
+/* ===== Telegram Buttons ===== */
+.tg-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.tg-buttons a {
+  flex: 1;
+  padding: 12px;
+  border-radius: 14px;
+  background: #1b1b22;
+  text-align: center;
+  text-decoration: none;
+  color: #7b5cff;
+  font-weight: 500;
+}
 </style>
 </head>
+
 <body>
 
 <canvas id="bg"></canvas>
 
 <div class="app">
-    <h1>🎶 AI Radio</h1>
+  <div class="card">
 
-    <div class="buttons">
-        <button id="popBtn" class="active">Поп</button>
-        <button id="chillBtn">Спокойная</button>
+    <h1>🎧 AI Radio</h1>
+
+    <div class="streams">
+      <button id="popBtn" class="active">Поп</button>
+      <button id="chillBtn">Спокойная</button>
     </div>
 
     <div class="controls">
-        <button id="playPause">▶</button>
-        <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7">
+      <button id="playPause" class="play">▶</button>
+      <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7">
     </div>
 
     <div class="tabs">
-        <div class="tab active" data-tab="radio">Радио</div>
-        <div class="tab" data-tab="profile">Профиль</div>
+      <div class="tab active" data-tab="radio">Радио</div>
+      <div class="tab" data-tab="profile">Профиль</div>
     </div>
 
     <div id="radio" class="panel active">
-        Поток играет. Наслаждайся ✨
+      Онлайн поток воспроизводится
     </div>
 
     <div id="profile" class="panel">
+      <div class="stat">
         ⏱ Прослушано: <span id="minutes">0</span> минут
-        <br><br>
-        🔗 Telegram:
-        <br>
+      </div>
+
+      <div class="tg-buttons">
         <a href="https://t.me/mindefi" target="_blank">Министр DeFi</a>
-        <br>
         <a href="https://t.me/AILumiere_news" target="_blank">AI Lumière</a>
+      </div>
     </div>
+
+  </div>
 </div>
 
 <audio id="audio" crossorigin="anonymous"></audio>
 
 <script>
-const audio = document.getElementById("audio");
-const playPause = document.getElementById("playPause");
-const volume = document.getElementById("volume");
+/* ===== AUDIO ===== */
+const audio = document.getElementById('audio')
+const playPause = document.getElementById('playPause')
+const volume = document.getElementById('volume')
 
-const STREAM_POP_URL = "https://region-ru4.tunio.ai/ooo-radio.aac";
-const STREAM_CHILL_URL = "https://stream-156.zeno.fm/0r0xa792kwzuv?zt=eyJhbGciOiJIUzI1NiJ9.eyJzdHJlYW0iOiIwcjB4YTc5Mmt3enV2IiwiaG9zdCI6InN0cmVhbS0xNTYuemVuby5mbSIsInJ0dGwiOjUsImp0dCI6InJhWC1TcGtMUlBLQUpfZjVIUGdrUUEiLCJpYXQiOjE3Njc5NDg0OTksImV4cCI6MTc2Nzk0ODU1OX0.fVoaDssqo6R3UfRgPkXgpfhmNPrVS4SWtdYeJCgV_XM";
+const STREAM_POP_URL = './pop.m3u8'
+const STREAM_CHILL_URL = 'https://stream-156.zeno.fm/0r0xa792kwzuv'
 
-let bpm = 128;
-audio.volume = volume.value;
+let bpm = 128
+audio.volume = volume.value
 
 playPause.onclick = () => {
-    if (audio.paused) {
-        audio.play();
-        playPause.textContent = "⏸";
-    } else {
-        audio.pause();
-        playPause.textContent = "▶";
-    }
-};
-
-volume.oninput = () => audio.volume = volume.value;
-
-document.getElementById("popBtn").onclick = () => {
-    setStream(STREAM_POP_URL, 128);
-    activate("popBtn");
-};
-
-document.getElementById("chillBtn").onclick = () => {
-    setStream(STREAM_CHILL_URL, 70);
-    activate("chillBtn");
-};
-
-function setStream(url, newBpm) {
-    bpm = newBpm;
-    audio.src = url;
-    audio.play();
-    playPause.textContent = "⏸";
+  if (audio.paused) {
+    audio.play()
+    playPause.textContent = '⏸'
+  } else {
+    audio.pause()
+    playPause.textContent = '▶'
+  }
 }
 
-function activate(id) {
-    document.querySelectorAll(".buttons button").forEach(b => b.classList.remove("active"));
-    document.getElementById(id).classList.add("active");
+volume.oninput = () => audio.volume = volume.value
+
+popBtn.onclick = () => setStream(STREAM_POP_URL, 128, popBtn)
+chillBtn.onclick = () => setStream(STREAM_CHILL_URL, 70, chillBtn)
+
+function setStream(url, newBpm, btn) {
+  bpm = newBpm
+  audio.src = url
+  audio.play()
+  playPause.textContent = '⏸'
+  document.querySelectorAll('.streams button').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
 }
 
-// Tabs
-document.querySelectorAll(".tab").forEach(tab => {
-    tab.onclick = () => {
-        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-        document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
-        tab.classList.add("active");
-        document.getElementById(tab.dataset.tab).classList.add("active");
-    };
-});
+/* ===== TABS ===== */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'))
+    tab.classList.add('active')
+    document.getElementById(tab.dataset.tab).classList.add('active')
+  }
+})
 
-// Listen time
-let listened = Number(localStorage.getItem("minutes")) || 0;
-const minutesEl = document.getElementById("minutes");
-minutesEl.textContent = listened;
+/* ===== LISTEN TIME ===== */
+let minutes = Number(localStorage.getItem('minutes')) || 0
+const minutesEl = document.getElementById('minutes')
+minutesEl.textContent = minutes
 
 setInterval(() => {
-    if (!audio.paused) {
-        listened++;
-        localStorage.setItem("minutes", listened);
-        minutesEl.textContent = listened;
-    }
-}, 60000);
+  if (!audio.paused) {
+    minutes++
+    localStorage.setItem('minutes', minutes)
+    minutesEl.textContent = minutes
+  }
+}, 60000)
 
-// Particles
-const canvas = document.getElementById("bg");
-const ctx = canvas.getContext("2d");
-let w, h;
+/* ===== PARTICLES ===== */
+const canvas = document.getElementById('bg')
+const ctx = canvas.getContext('2d')
 
 function resize() {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
+  canvas.width = innerWidth
+  canvas.height = innerHeight
 }
-window.onresize = resize;
-resize();
+resize()
+window.onresize = resize
 
-const particles = Array.from({ length: 120 }, () => ({
-    x: Math.random() * w,
-    y: Math.random() * h,
-    r: Math.random() * 2 + 1,
-    v: Math.random()
-}));
+const particles = Array.from({ length: 90 }, () => ({
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height,
+  r: Math.random() * 2 + 1,
+  v: Math.random() + 0.3
+}))
 
 function animate() {
-    ctx.clearRect(0, 0, w, h);
-    const speed = bpm / 100;
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  const speed = bpm / 110
 
-    for (const p of particles) {
-        p.y -= p.v * speed;
-        if (p.y < 0) p.y = h;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = bpm > 100 ? "#ff4ecd" : "#6fd3ff";
-        ctx.fill();
-    }
-    requestAnimationFrame(animate);
+  particles.forEach(p => {
+    p.y -= p.v * speed
+    if (p.y < 0) p.y = canvas.height
+
+    ctx.beginPath()
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+    ctx.fillStyle = bpm > 100 ? '#ff4ecd' : '#6fd3ff'
+    ctx.fill()
+  })
+
+  requestAnimationFrame(animate)
 }
-animate();
+animate()
 </script>
 
 </body>
