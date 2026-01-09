@@ -1,476 +1,170 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Choyxona Radio</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.6/babel.min.js"></script>
-    <style>
-      .container {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        color: white;
-      }
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>AI Radio</title>
+<style>
+    * { box-sizing: border-box; font-family: Inter, Arial, sans-serif; }
+    body { margin: 0; overflow: hidden; background: #0a0a0a; color: #fff; }
+    canvas { position: fixed; inset: 0; z-index: -1; }
+    .app { padding: 20px; max-width: 420px; }
+    h1 { margin: 0 0 15px; font-size: 26px; }
+    .buttons { display: flex; gap: 10px; margin-bottom: 15px; }
+    button { flex: 1; padding: 12px; border: none; border-radius: 10px; background: #1f1f1f; color: white; cursor: pointer; font-size: 14px; transition: 0.2s; }
+    button.active { background: linear-gradient(135deg, #ff4ecd, #7b5cff); }
+    button:hover { opacity: 0.85; }
+    .controls { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+    input[type="range"] { width: 100%; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 10px; }
+    .tab { cursor: pointer; opacity: 0.6; }
+    .tab.active { opacity: 1; font-weight: bold; }
+    .panel { display: none; font-size: 14px; line-height: 1.6; }
+    .panel.active { display: block; }
+    a { color: #7b5cff; text-decoration: none; }
+</style>
+</head>
+<body>
 
-      .tabs {
-        display: flex;
-        background: rgba(0, 0, 0, 0.5);
-        padding: 10px;
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-        z-index: 10;
-      }
+<canvas id="bg"></canvas>
 
-      .tab {
-        flex: 1;
-        text-align: center;
-        padding: 10px;
-        cursor: pointer;
-        font-size: 16px;
-      }
+<div class="app">
+    <h1>🎶 AI Radio</h1>
 
-      .tab.active {
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 5px;
-      }
+    <div class="buttons">
+        <button id="popBtn" class="active">Поп</button>
+        <button id="chillBtn">Спокойная</button>
+    </div>
 
-      .content {
-        flex: 1;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-      }
+    <div class="controls">
+        <button id="playPause">▶</button>
+        <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7">
+    </div>
 
-      .controls {
-        margin-top: 20px;
-      }
+    <div class="tabs">
+        <div class="tab active" data-tab="radio">Радио</div>
+        <div class="tab" data-tab="profile">Профиль</div>
+    </div>
 
-      button {
-        padding: 10px 20px;
-        margin: 5px;
-        border: none;
-        border-radius: 5px;
-        background: #007bff;
-        color: white;
-        cursor: pointer;
-      }
+    <div id="radio" class="panel active">
+        Поток играет. Наслаждайся ✨
+    </div>
 
-      button:hover {
-        background: #0056b3;
-      }
+    <div id="profile" class="panel">
+        ⏱ Прослушано: <span id="minutes">0</span> минут
+        <br><br>
+        🔗 Telegram:
+        <br>
+        <a href="https://t.me/mindefi" target="_blank">Министр DeFi</a>
+        <br>
+        <a href="https://t.me/AILumiere_news" target="_blank">AI Lumière</a>
+    </div>
+</div>
 
-      button:disabled {
-        background: #6c757d;
-        cursor: not-allowed;
-      }
+<audio id="audio" crossorigin="anonymous"></audio>
 
-      .volume {
-        margin: 20px 0;
-      }
+<script>
+const audio = document.getElementById("audio");
+const playPause = document.getElementById("playPause");
+const volume = document.getElementById("volume");
 
-      .volume input {
-        width: 200px;
-      }
+const STREAM_POP_URL = "https://region-ru4.tunio.ai/ooo-radio.aac";
+const STREAM_CHILL_URL = "https://stream-156.zeno.fm/0r0xa792kwzuv?zt=eyJhbGciOiJIUzI1NiJ9.eyJzdHJlYW0iOiIwcjB4YTc5Mmt3enV2IiwiaG9zdCI6InN0cmVhbS0xNTYuemVuby5mbSIsInJ0dGwiOjUsImp0dCI6InJhWC1TcGtMUlBLQUpfZjVIUGdrUUEiLCJpYXQiOjE3Njc5NDg0OTksImV4cCI6MTc2Nzk0ODU1OX0.fVoaDssqo6R3UfRgPkXgpfhmNPrVS4SWtdYeJCgV_XM";
 
-      .player-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin: 20px 0;
-      }
+let bpm = 128;
+audio.volume = volume.value;
 
-      .player-container.playing .player-visualizer .bar {
-        animation: equalizer 0.5s infinite alternate;
-      }
+playPause.onclick = () => {
+    if (audio.paused) {
+        audio.play();
+        playPause.textContent = "⏸";
+    } else {
+        audio.pause();
+        playPause.textContent = "▶";
+    }
+};
 
-      .player-visualizer {
-        display: flex;
-        gap: 5px;
-        height: 60px;
-        align-items: flex-end;
-      }
+volume.oninput = () => audio.volume = volume.value;
 
-      .bar {
-        width: 10px;
-        height: 10px;
-        background: #007bff;
-        border-radius: 2px;
-      }
+document.getElementById("popBtn").onclick = () => {
+    setStream(STREAM_POP_URL, 128);
+    activate("popBtn");
+};
 
-      .bar:nth-child(1) { animation-delay: 0s; }
-      .bar:nth-child(2) { animation-delay: 0.1s; }
-      .bar:nth-child(3) { animation-delay: 0.2s; }
-      .bar:nth-child(4) { animation-delay: 0.3s; }
-      .bar:nth-child(5) { animation-delay: 0.4s; }
+document.getElementById("chillBtn").onclick = () => {
+    setStream(STREAM_CHILL_URL, 70);
+    activate("chillBtn");
+};
 
-      .player-info {
-        margin-top: 15px;
-      }
+function setStream(url, newBpm) {
+    bpm = newBpm;
+    audio.src = url;
+    audio.play();
+    playPause.textContent = "⏸";
+}
 
-      .telegram-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        margin-top: 15px;
-      }
+function activate(id) {
+    document.querySelectorAll(".buttons button").forEach(b => b.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+}
 
-      .theme-selector, .language-selector {
-        margin-top: 20px;
-      }
+// Tabs
+document.querySelectorAll(".tab").forEach(tab => {
+    tab.onclick = () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.tab).classList.add("active");
+    };
+});
 
-      .theme-btn {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        margin: 0 10px;
-        border: 2px solid white;
-        cursor: pointer;
-      }
+// Listen time
+let listened = Number(localStorage.getItem("minutes")) || 0;
+const minutesEl = document.getElementById("minutes");
+minutesEl.textContent = listened;
 
-      .light {
-        background: url('https://i.ibb.co/QjYdcjcr/light.png') center/cover;
-      }
+setInterval(() => {
+    if (!audio.paused) {
+        listened++;
+        localStorage.setItem("minutes", listened);
+        minutesEl.textContent = listened;
+    }
+}, 60000);
 
-      .night {
-        background: url('https://i.ibb.co/jk7GMccj/night.png') center/cover;
-      }
+// Particles
+const canvas = document.getElementById("bg");
+const ctx = canvas.getContext("2d");
+let w, h;
 
-      .rain {
-        background: url('https://i.ibb.co/xSsFF9fS/rain.png') center/cover;
-      }
+function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+}
+window.onresize = resize;
+resize();
 
-      select {
-        padding: 10px;
-        border-radius: 5px;
-        background: #007bff;
-        color: white;
-        border: none;
-        cursor: pointer;
-      }
+const particles = Array.from({ length: 120 }, () => ({
+    x: Math.random() * w,
+    y: Math.random() * h,
+    r: Math.random() * 2 + 1,
+    v: Math.random()
+}));
 
-      select:hover {
-        background: #0056b3;
-      }
+function animate() {
+    ctx.clearRect(0, 0, w, h);
+    const speed = bpm / 100;
 
-      body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        height: 100vh;
-        overflow: hidden;
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-      }
+    for (const p of particles) {
+        p.y -= p.v * speed;
+        if (p.y < 0) p.y = h;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = bpm > 100 ? "#ff4ecd" : "#6fd3ff";
+        ctx.fill();
+    }
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
 
-      body.theme-transition {
-        transition: background-image 0.5s ease;
-      }
-
-      @keyframes equalizer {
-        0% { height: 10px; }
-        100% { height: 60px; }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="text/babel">
-      // Note: For production, precompile scripts using Babel instead of in-browser transformer
-      // See: https://babeljs.io/docs/setup/
-      const { createRoot } = ReactDOM;
-
-      function App() {
-        const [activeTab, setActiveTab] = React.useState('radio');
-        const [isPlaying, setIsPlaying] = React.useState(false);
-        const [volume, setVolume] = React.useState(50);
-        const [listenTime, setListenTime] = React.useState(0);
-        const [theme, setTheme] = React.useState('light');
-        const [language, setLanguage] = React.useState('en');
-        const [error, setError] = React.useState(null);
-
-        const translations = {
-          ru: {
-            radio: 'Радио',
-            profile: 'Профиль',
-            choyxonaRadio: 'Чойхона Радио',
-            nowPlaying: 'Сейчас играет: Чойхона Радио',
-            pause: 'Пауза',
-            play: 'Играть',
-            volume: 'Громкость',
-            listened: 'Прослушано',
-            startupChoyxona: 'Стартап Чойхона',
-            tonCommunity: 'TON Сообщество CA',
-            chooseTheme: 'Выберите тему',
-            chooseLanguage: 'Выберите язык',
-            error: 'Ошибка воспроизведения аудио'
-          },
-          en: {
-            radio: 'Radio',
-            profile: 'Profile',
-            choyxonaRadio: 'Choyxona Radio',
-            nowPlaying: 'Now Playing: Choyxona Radio',
-            pause: 'Pause',
-            play: 'Play',
-            volume: 'Volume',
-            listened: 'Listened',
-            startupChoyxona: 'Startup Choyxona',
-            tonCommunity: 'TON Community CA',
-            chooseTheme: 'Choose Theme',
-            chooseLanguage: 'Choose Language',
-            error: 'Audio playback error'
-          },
-          lez: {
-            radio: 'Радио',
-            profile: 'Профиль',
-            choyxonaRadio: 'Чойхона Радио',
-            nowPlaying: 'Гьисятда къугъвазва чойхона радио',
-            pause: 'Къозара',
-            play: 'Яб ча',
-            volume: 'Ван',
-            listened: 'Яб гана',
-            startupChoyxona: 'Стартап Чойхона',
-            tonCommunity: 'TON Community CA',
-            chooseTheme: 'Шкил хкягъа',
-            chooseLanguage: 'ЧIал хкягъа',
-            error: 'Аудио чур жен'
-          },
-          uz: {
-            radio: 'Radio',
-            profile: 'Profil',
-            choyxonaRadio: 'Choyxona Radio',
-            nowPlaying: 'Hozir o\'ynayapti: Choyxona Radio',
-            pause: 'Pauza',
-            play: 'O\'ynash',
-            volume: 'Ovoz balandligi',
-            listened: 'Tinglangan',
-            startupChoyxona: 'Startup Choyxona',
-            tonCommunity: 'TON Jamiyat CA',
-            chooseTheme: 'Mavzuni tanlang',
-            chooseLanguage: 'Tilni tanlang',
-            error: 'Audio o\'ynashda xatolik'
-          }
-        };
-
-        const audioRef = React.useRef(null);
-        const timerRef = React.useRef(null);
-
-        React.useEffect(() => {
-          const tg = window.Telegram?.WebApp;
-          
-          if (tg) {
-            tg.ready();
-            tg.expand();
-          }
-
-          try {
-            audioRef.current = new Audio('https://region-ru1.tunio.ai/radio-choyxona.aac');
-            audioRef.current.volume = volume / 100;
-            audioRef.current.addEventListener('error', (e) => {
-              setError('Audio playback error');
-              setIsPlaying(false);
-            });
-          } catch (err) {
-            setError('Failed to initialize audio');
-          }
-
-          const savedTheme = localStorage.getItem('theme');
-          const savedListenTime = localStorage.getItem('listenTime');
-          const savedLanguage = localStorage.getItem('language');
-          
-          if (savedTheme) setTheme(savedTheme);
-          if (savedListenTime) setListenTime(parseFloat(savedListenTime));
-          if (savedLanguage) setLanguage(savedLanguage);
-
-          return () => {
-            if (audioRef.current) {
-              audioRef.current.pause();
-              audioRef.current = null;
-            }
-            if (timerRef.current) clearInterval(timerRef.current);
-          };
-        }, []);
-
-        React.useEffect(() => {
-          const themes = {
-            light: 'https://i.ibb.co/QjYdcjcr/light.png',
-            night: 'https://i.ibb.co/jk7GMccj/night.png',
-            rain: 'https://i.ibb.co/xSsFF9fS/rain.png'
-          };
-          
-          document.body.classList.add('theme-transition');
-          document.body.style.backgroundImage = `url(${themes[theme]})`;
-          document.body.style.backgroundSize = 'cover';
-          document.body.style.backgroundPosition = 'center';
-          document.body.style.backgroundAttachment = 'fixed';
-          
-          localStorage.setItem('theme', theme);
-          
-          const timeout = setTimeout(() => {
-            document.body.classList.remove('theme-transition');
-          }, 500);
-
-          return () => clearTimeout(timeout);
-        }, [theme]);
-
-        React.useEffect(() => {
-          localStorage.setItem('listenTime', listenTime.toString());
-          localStorage.setItem('language', language);
-        }, [listenTime, language]);
-
-        const togglePlay = () => {
-          if (isPlaying) {
-            audioRef.current.pause();
-            clearInterval(timerRef.current);
-            setIsPlaying(false);
-          } else if (volume > 0) {
-            try {
-              const playPromise = audioRef.current.play();
-              if (playPromise !== undefined) {
-                playPromise
-                  .then(() => {
-                    timerRef.current = setInterval(() => {
-                      setListenTime(prev => prev + 1/60);
-                    }, 1000);
-                    setIsPlaying(true);
-                    setError(null);
-                  })
-                  .catch((err) => {
-                    setError('Audio playback error');
-                    setIsPlaying(false);
-                  });
-              }
-            } catch (err) {
-              setError('Audio playback error');
-              setIsPlaying(false);
-            }
-          }
-        };
-
-        const handleVolumeChange = (e) => {
-          const newVolume = e.target.value;
-          setVolume(newVolume);
-          audioRef.current.volume = newVolume / 100;
-          if (newVolume == 0 && isPlaying) {
-            audioRef.current.pause();
-            clearInterval(timerRef.current);
-            setIsPlaying(false);
-          }
-        };
-
-        const handleLanguageChange = (e) => {
-          setLanguage(e.target.value);
-        };
-
-        const openTelegramChannel = (url) => {
-          window.Telegram.WebApp.openTelegramLink(url);
-        };
-
-        const t = translations[language];
-
-        return (
-          <div className="container">
-            <div className="content">
-              {activeTab === 'radio' && (
-                <div className="content">
-                  <h1>{t.choyxonaRadio}</h1>
-                  {error && <p style={{ color: 'red' }}>{t.error}</p>}
-                  <div className={`player-container ${isPlaying ? 'playing' : ''}`}>
-                    <div className="player-visualizer">
-                      <div className="bar"></div>
-                      <div className="bar"></div>
-                      <div className="bar"></div>
-                      <div className="bar"></div>
-                      <div className="bar"></div>
-                    </div>
-                    <div className="player-info">
-                      <p>{t.nowPlaying}</p>
-                    </div>
-                  </div>
-                  <div className="controls">
-                    <button onClick={togglePlay} disabled={volume == 0}>
-                      {isPlaying ? t.pause : t.play}
-                    </button>
-                    <div className="volume">
-                      <label>{t.volume}: </label>
-                      <input 
-                        type="range" 
-                        min="0" 
-                        max="100" 
-                        value={volume} 
-                        onChange={handleVolumeChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'profile' && (
-                <div className="content">
-                  <h2>{t.profile}</h2>
-                  <p>{t.listened}: {Math.floor(listenTime)} minutes</p>
-                  <div className="telegram-buttons">
-                    <button onClick={() => openTelegramChannel('https://t.me/startupchoyxona')}>
-                      {t.startupChoyxona}
-                    </button>
-                    <button onClick={() => openTelegramChannel('https://t.me/tonsocietycahub')}>
-                      {t.tonCommunity}
-                    </button>
-                  </div>
-                  <div className="theme-selector">
-                    <h3>{t.chooseTheme}</h3>
-                    <button 
-                      className="theme-btn light"
-                      onClick={() => setTheme('light')}
-                    ></button>
-                    <button 
-                      className="theme-btn night"
-                      onClick={() => setTheme('night')}
-                    ></button>
-                    <button 
-                      className="theme-btn rain"
-                      onClick={() => setTheme('rain')}
-                    ></button>
-                  </div>
-                  <div className="language-selector">
-                    <h3>{t.chooseLanguage}</h3>
-                    <select value={language} onChange={handleLanguageChange}>
-                      <option value="en">English</option>
-                      <option value="ru">Русский</option>
-                      <option value="lez">Лезгинский</option>
-                      <option value="uz">O‘zbek</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="tabs">
-              <div 
-                className={`tab ${activeTab === 'radio' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('radio')}
-              >
-                {t.radio}
-              </div>
-              <div 
-                className={`tab ${activeTab === 'profile' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('profile')}
-              >
-                {t.profile}
-              </div>
-            </div>
-          </div>
-        );
-      }
-
-      const root = createRoot(document.getElementById('root'));
-      root.render(<App />);
-    </script>
-  </body>
+</body>
 </html>
